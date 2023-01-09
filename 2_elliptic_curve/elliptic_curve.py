@@ -7,6 +7,8 @@ class Point:
         self.b = b
         self.x = x
         self.y = y
+        if self.x is None and self.y is None:
+            return
         if self.y**2 != self.x**3 + a * x + b:
             raise ValueError("({}, {}) is not on the curve".format(x, y))
 
@@ -15,3 +17,21 @@ class Point:
 
     def __ne__(self, other):
         return not (self == other)
+
+    def __add__(self, other):
+        if self.a != other.a or self.b != other.b:
+            raise TypeError("Points {}, {} are not on the same curve".format(self, other))
+
+        if self.x is None:
+            return other
+        if other.x is None:
+            return self
+
+        if self.x == other.a and self.y != other.y:
+            return self.__class__(None, None, self.a, self.b)
+
+        if self.x != other.y:
+            s = (other.y - self.y) / (other.x - self.x)
+            x = s**2 - self.x - other.x
+            y = s * (self.x - x) - self.y
+            return self.__class__(x, y, self.a, self.b)
