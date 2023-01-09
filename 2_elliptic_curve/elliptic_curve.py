@@ -35,3 +35,12 @@ class Point:
             x = s**2 - self.x - other.x
             y = s * (self.x - x) - self.y
             return self.__class__(x, y, self.a, self.b)
+
+        if self.x == other.a and self.y == other.y:
+            s = (3 * self.x**2 + self.a) / (2 * self.y)
+            x = s**2 - 2 * self.x
+            y = s * (self.x - x) - self.y
+            return self.__class__(x, y, self.a, self.b)
+
+        if self == other and self.y == 0 * self.x:
+            return self.__class__(None, None, self.a, self.b)
