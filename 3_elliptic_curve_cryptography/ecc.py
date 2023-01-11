@@ -49,6 +49,10 @@ class FieldElement:
         num = self.num * pow(other.num, self.prime - 2, self.prime) % self.prime
         return self.__class__(num, self.prime)
 
+    def __rmul__(self, coefficient):
+        num = (self.num * coefficient) % self.prime
+        return self.__class__(num=num, prime=self.prime)
+
 
 class Point:
     def __init__(self, x, y, a, b):
@@ -85,10 +89,10 @@ class Point:
         if other.x is None:
             return self
 
-        if self.x == other.a and self.y != other.y:
+        if self.x == other.x and self.y != other.y:
             return self.__class__(None, None, self.a, self.b)
 
-        if self.x != other.y:
+        if self.x != other.x:
             s = (other.y - self.y) / (other.x - self.x)
             x = s**2 - self.x - other.x
             y = s * (self.x - x) - self.y
@@ -102,6 +106,17 @@ class Point:
 
         if self == other and self.y == 0 * self.x:
             return self.__class__(None, None, self.a, self.b)
+
+    def __rmul__(self, coefficient):
+        coef = coefficient
+        current = self
+        result = self.__class__(None, None, self.a, self.b)
+        while coef:
+            if coef & 1:
+                result += current
+            current += current
+            coef >>= 1
+        return result
 
 
 class ECCTest(TestCase):
@@ -120,3 +135,64 @@ class ECCTest(TestCase):
             y = FieldElement(y_raw, prime)
             with self.assertRaises(ValueError):
                 Point(x, y, a, b)
+
+    def test_add(self):
+        prime = 223
+        a = FieldElement(0, prime)
+        b = FieldElement(7, prime)
+        additions = (
+            (192, 105, 17, 56, 170, 142),
+            (47, 71, 117, 141, 60, 139),
+            (143, 98, 76, 66, 47, 71),
+        )
+        for x1_raw, y1_raw, x2_raw, y2_raw, x3_raw, y3_raw in additions:
+            x1 = FieldElement(x1_raw, prime)
+            y1 = FieldElement(y1_raw, prime)
+            p1 = Point(x1, y1, a, b)
+            x2 = FieldElement(x2_raw, prime)
+            y2 = FieldElement(y2_raw, prime)
+            p2 = Point(x2, y2, a, b)
+            x3 = FieldElement(x3_raw, prime)
+            y3 = FieldElement(y3_raw, prime)
+            p3 = Point(x3, y3, a, b)
+            self.assertEqual(p1 + p2, p3)
+
+
+A = 0
+B = 7
+
+P = 2**256 - 2**32 - 977
+N = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
+
+
+class S256Field(FieldElement):
+    def __init__(self, num, prime=None):
+        super().__init__(num=num, prime=P)
+
+    def __repr__(self):
+        return "{:x}".format(self.num).zfill(64)
+
+
+class S256Point(Point):
+    def __init__(self, x, y, a=None, b=None):
+        a, b = S256Field(A), S256Field(B)
+        if type(x) == int:
+            super().__init__(x=S256Field(x), y=S256Field(y), a=a, b=b)
+        else:
+            super().__init__(x=x, y=y, a=a, b=b)
+
+    def __repr__(self):
+        if self.x is None:
+            return "S256Point(infinity)"
+        else:
+            return "S256Point({}, {})".format(self.x, self.y)
+
+    def __rmul__(self, coefficient):
+        coef = coefficient % N  # <1>
+        return super().__rmul__(coef)
+
+
+G = S256Point(
+    0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798,
+    0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8,
+)
