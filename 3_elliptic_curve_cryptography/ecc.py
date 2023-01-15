@@ -1,3 +1,4 @@
+from bz2 import compress
 from random import randint
 from unittest import TestCase
 
@@ -201,6 +202,15 @@ class S256Point(Point):
         v = sig.r * s_inv % N
         total = u * G + v * self
         return total.x.num == sig.r
+
+    def sec(self, compressed=True):
+        if compressed:
+            if self.y.num % 2 == 0:
+                return b"\x02" + self.x.num.to_bytes(32, "big")
+            else:
+                return b"\x03" + self.x.num.to_bytes(32, "big")
+        else:
+            return b"\x04" + self.x.num.to_bytes(32, "big") + self.y.num.to_bytes(32, "big")
 
 
 G = S256Point(
