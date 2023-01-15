@@ -4,7 +4,7 @@ from unittest import TestCase
 import hashlib
 import hmac
 
-from matplotlib.widgets import EllipseSelector
+from helper import encode_base58_checksum, hash160
 
 
 class FieldElement:
@@ -238,6 +238,20 @@ class S256Point(Point):
             return S256Point(x, even_beta)
         else:
             return S256Point(x, odd_beta)
+
+    def hash160(self, compressed=True):
+        return hash160(self.sec(compressed))
+
+    def address(self, compressed=True, testnet=False):
+        """Returns the address string"""
+        h160 = self.hash160(compressed)
+        if testnet:
+            prefix = b"\x6f"
+        else:
+            prefix = b"\x00"
+        return encode_base58_checksum(prefix + h160)
+
+    # end::source5[]
 
 
 G = S256Point(
