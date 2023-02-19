@@ -1,7 +1,5 @@
 from io import BytesIO
 from multiprocessing.sharedctypes import Value
-from 5_
-from matplotlib.widgets import EllipseSelectortransaction.helper import encode_varint
 
 from numpy import int_
 from pyparsing import rest_of_line
